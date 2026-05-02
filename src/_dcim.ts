@@ -1,4 +1,4 @@
-import {compile} from "#src/_compiler"
+import {compile} from "./_compiler"
 
 /** Resize an image to one or both target dimensions. */
 export interface ResizeOperation {
