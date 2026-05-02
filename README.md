@@ -1,146 +1,115 @@
-# lambda-reactor
+# lib-dcim
 
-A lightweight, type-safe API framework for AWS Lambda & API Gateway.
+A browser-native image transformation library that compiles declarative pipelines into dependency-free JavaScript, then runs them in a Web Worker via the Canvas API.
 
 ```bash
-npm i lambda-reactor
+npm i lib-dcim
 ```
+
+## How it works
+
+You describe a pipeline using a fluent builder (`dcim()`), call `.compile()` to get a self-contained JS module, then hand that module to `createWorker()` which spins up a Worker to process images off the main thread.
 
 ## Quick Start
 
-### Handler
-
 ```ts
-// src/items.ts
-import {createHandler, method, Response} from "lambda-reactor"
-import {z} from "zod"
+import {dcim, createWorker} from "lib-dcim"
 
-const ItemSchema = z.object({id: z.string(), label: z.string(), qty: z.number().int()})
-const CreateItemSchema = ItemSchema.omit({id: true})
+const code = dcim().resize(1280, null, {fit: "cover"}).webp(85).compile()
 
-const store: z.infer<typeof ItemSchema>[] = []
+const processor = createWorker(code)
 
-export const handler = createHandler({
-    GET: method()
-        .output(z.array(ItemSchema))
-        .handle(() => store),
-
-    POST: method()
-        .input(CreateItemSchema)
-        .output(ItemSchema)
-        .handle(({body}) => {
-            const item = {id: crypto.randomUUID(), ...body}
-            store.push(item)
-            return Response.json(201, item)
-        }),
-})
-```
-
-### Health check
-
-```ts
-// src/health.ts
-import {createHandler, method, Response} from "lambda-reactor"
-
-export const handler = createHandler({
-    GET: method().handle(() => Response.text(200, "OK")),
-})
+const blob = await processor.run(imageFile)
+processor.dispose()
 ```
 
 ## API
 
-### `createHandler(routes)`
+### `dcim()`
 
-Creates an AWS Lambda handler from a map of HTTP method names to route handlers.
+Returns an empty `DCIM` pipeline builder. All methods return a new `DCIM` instance — the builder is immutable.
 
-- Returns `405 Method Not Allowed` (with an `Allow` header) for unregistered methods.
-- Catches `Error` thrown during dispatch and returns `500 Internal Server Error`.
-  In non-production environments the error message and stack trace are included in the body.
-- Re-throws non-`Error` throwables to the Lambda runtime.
+### `DCIM`
 
-### `method()`
+#### `.resize(width, height, options?)`
 
-Returns a fluent, immutable builder for a single HTTP-method route.
+Add a resize operation. At least one dimension must be non-null.
 
-| Method               | Description                                                            |
-| -------------------- | ---------------------------------------------------------------------- |
-| `.use(middleware)`   | Append a middleware applied left-to-right after the callback resolves. |
-| `.input(zodSchema)`  | Validate the request body. Returns `400` on failure.                   |
-| `.output(zodSchema)` | Validate (and strip) the response body against a Zod schema.           |
-| `.handle(callback)`  | Attach the handler callback. Returns a `RouteHandler`.                 |
+| Option   | Type                             | Default   | Description                                      |
+| -------- | -------------------------------- | --------- | ------------------------------------------------ |
+| `fit`    | `"cover" \| "contain" \| "fill"` | `"cover"` | How to fit the image                             |
+| `aspect` | `number`                         | —         | Aspect ratio used to infer the missing dimension |
 
-The callback receives `{event, context, body}` where `body` is the parsed and validated request body.
+#### `.png()`
 
-### `Response`
+Convert to PNG (lossless).
 
-Immutable response builder.
+#### `.jpeg(quality?)`
+
+Convert to JPEG. `quality` is 0–100, default `100`.
+
+#### `.webp(quality?)`
+
+Convert to WebP. `quality` is 0–100, default `100`.
+
+#### `.avif(quality?)`
+
+Convert to AVIF. `quality` is 0–100, default `100`.
+
+#### `.compile()`
+
+Compile the pipeline into a self-contained JavaScript module string. The module exports:
+
+- `transform(image)` — applies pixel operations, returns a canvas
+- `encode(image)` — applies operations and returns a `Blob`
+
+### `createWorker(code)`
+
+Create a reusable `WorkerProcessor` from compiled pipeline code. The Worker is created once and reused across calls.
 
 ```ts
-Response.text(200, "OK")
-Response.json(201, {id: "abc"})
-Response.json(200, data).header("X-Custom", "value")
+const processor = createWorker(code)
+const blob = await processor.run(file) // ImageBitmapSource
+processor.dispose() // release Worker and Blob URL
 ```
 
-### `cors(headers?)`
+### `WorkerProcessor`
 
-Middleware that injects `Access-Control-*` response headers.
+| Method       | Description                                  |
+| ------------ | -------------------------------------------- |
+| `run(image)` | Process an image and resolve to a `Blob`     |
+| `dispose()`  | Terminate the Worker and revoke the Blob URL |
 
-```ts
-import {method, cors} from "lambda-reactor"
+`ImageInput` accepts anything that `createImageBitmap` accepts: `Blob`, `File`, `ImageData`, `HTMLImageElement`, etc.
 
-method()
-    .use(cors({"Allow-Origin": "*", "Allow-Headers": "Content-Type"}))
-    .handle(…)
-```
+### `compile(operations)`
 
-Each key is automatically prefixed with `Access-Control-`.
+Lower-level export. Compile an `Operation[]` directly to JavaScript source.
 
-## CDK Integration
-
-Use `router()` to declaratively wire handler source files to API Gateway resources.
+## Types
 
 ```ts
-// lib/app-stack.ts
-import {router} from "lambda-reactor"
-import {RestApi} from "aws-cdk-lib/aws-apigateway"
-import {NodejsFunction} from "aws-cdk-lib/aws-lambda-nodejs"
-import {Stack, type StackProps} from "aws-cdk-lib/core"
-import {type Construct} from "constructs"
-
-export class AppStack extends Stack {
-    constructor(scope: Construct, id: string, props?: StackProps) {
-        super(scope, id, props)
-        const api = new RestApi(this, "Api")
-        router()
-            .route("/health")
-            .route("/items")
-            .route("/users/{id}")
-            .defineRestApi(
-                api,
-                (entry, handlerId) => new NodejsFunction(this, handlerId, {entry}),
-            )
-    }
+interface ResizeOperation {
+    type: "ResizeOperation"
+    width: number | null
+    height: number | null
+    fit: "cover" | "contain" | "fill"
+    aspect?: number
 }
+
+interface ConvertOperation {
+    type: "ConvertOperation"
+    format: "png" | "jpeg" | "webp" | "avif"
+    quality: number
+}
+
+type Operation = ResizeOperation | ConvertOperation
+type ImageInput = ImageBitmapSource
 ```
-
-`router(srcDir?)` defaults `srcDir` to `"src"`. Each `.route(path)` call expects a handler file at `<srcDir>/<path>.ts` exporting a `handler`.
-
-Use `.cors(corsOptions)` to add preflight CORS to every resource:
-
-```ts
-router()
-    .cors({allowOrigins: ["https://example.com"]})
-    .route("/items")
-    .defineRestApi(api, factory)
-```
-
-## Environment
-
-Set `NODE_ENV=production` to suppress error details in `500` responses.
 
 ## Development
 
-```sh
+```bash
 bun install
 bun test
 bun run build
