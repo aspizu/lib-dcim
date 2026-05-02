@@ -1,6 +1,6 @@
 {
     "name": "lib-dcim",
-    "version": "1.0.0",
+    "version": "1.0.2",
     "scripts": {
         "prepare": "lefthook install",
         "check": "tsgo",
@@ -8,12 +8,9 @@
         "format": "prettier -uwu .",
         "test": "vitest",
         "build": "rm -rf dist && tsgo -p tsconfig.build.json && bun build --target=browser --external='*' --splitting --sourcemap=external --keep-names --root=src --outdir=dist src/*.ts",
-        "publish": "bun run build && cd dist && cp ../package.json . && npm publish"
+        "pub": "bun run build && cd dist && cp ../package.json . && npm publish"
     },
     "type": "module",
-    "imports": {
-        "#src/*": "./src/*.ts"
-    },
     "exports": {
         ".": {
             "types": "./index.d.ts",

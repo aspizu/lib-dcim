@@ -1,7 +1,7 @@
-import {_runtime} from "#src/_canvas-runtime"
-import type {ConvertOperation, Operation} from "#src/_dcim"
-import {_compileResizeOperation} from "#src/_resize-compiler"
-import {_assertIntegerInRange} from "#src/_validation"
+import {_runtime} from "./_canvas-runtime"
+import type {ConvertOperation, Operation} from "./_dcim"
+import {_compileResizeOperation} from "./_resize-compiler"
+import {_assertIntegerInRange} from "./_validation"
 
 const _formats = new Set<ConvertOperation["format"]>(["avif", "jpeg", "png", "webp"])
 

@@ -1,5 +1,5 @@
-import {_workerSource} from "#src/_worker-source"
-import type {_WorkerErrorData} from "#src/_worker-source"
+import type {_WorkerErrorData} from "./_worker-source"
+import {_workerSource} from "./_worker-source"
 
 /** Image input accepted by DCIM worker processing. */
 export type ImageInput = ImageBitmapSource

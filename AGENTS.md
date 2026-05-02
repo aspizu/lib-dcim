@@ -1,4 +1,4 @@
-use absolute imports like `"#src/router"`
+use absolute imports like `"./router"`
 run `.git/hooks/pre-commit && bun run check` to ensure code quality
 whenever you add a feature or fix a bug, add tests and documentation for it (jsdoc)
 you may not suppress eslint rules or typescript errors
