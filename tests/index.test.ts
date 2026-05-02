@@ -1,5 +1,4 @@
-import {compile, dcim, type Operation} from "#src/index"
-
+import {compile, dcim, type Operation} from "../src/index"
 import {_loadEncode, _loadTransform} from "./_fake-canvas"
 
 describe("compile", () => {

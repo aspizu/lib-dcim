@@ -1,5 +1,5 @@
-import {_workerSource} from "#src/_worker-source"
-import {createWorker, dcim} from "#src/index"
+import {_workerSource} from "../src/_worker-source"
+import {createWorker, dcim} from "../src/index"
 
 describe("workers", () => {
     it("wraps compiled modules for worker execution", () => {
