@@ -1,5 +1,5 @@
-import type {ResizeOperation} from "#src/_dcim"
-import {_assertPositiveInteger, _assertPositiveNumber} from "#src/_validation"
+import type {ResizeOperation} from "./_dcim"
+import {_assertPositiveInteger, _assertPositiveNumber} from "./_validation"
 
 const _fits = new Set<ResizeOperation["fit"]>(["contain", "cover", "fill"])
 
