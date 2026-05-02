@@ -1,0 +1,16 @@
+pre-commit:
+    parallel: true
+    jobs:
+        - name: format
+          glob: "*.{ts,tsx,js,json,yml,yaml,md}"
+          run: bunx prettier -w {staged_files} && git add {staged_files}
+        - name: lint
+          glob: "*.{ts,tsx}"
+          run: bunx eslint --fix {staged_files} && git add {staged_files}
+
+pre-push:
+    jobs:
+        - name: check
+          run: bun run check
+        - name: test
+          run: bun test

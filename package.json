@@ -1,0 +1,40 @@
+{
+    "name": "lib-dcim",
+    "version": "1.0.0",
+    "scripts": {
+        "prepare": "lefthook install",
+        "check": "tsgo",
+        "lint": "eslint --fix",
+        "format": "prettier -uwu .",
+        "test": "vitest",
+        "build": "rm -rf dist && tsgo -p tsconfig.build.json && bun build --target=browser --external='*' --splitting --sourcemap=external --keep-names --root=src --outdir=dist src/*.ts",
+        "publish": "bun run build && cd dist && cp ../package.json . && npm publish"
+    },
+    "type": "module",
+    "imports": {
+        "#src/*": "./src/*.ts"
+    },
+    "exports": {
+        ".": {
+            "types": "./index.d.ts",
+            "default": "./index.js"
+        },
+        "./*": {
+            "types": "./*.d.ts",
+            "default": "./*.js"
+        }
+    },
+    "devDependencies": {
+        "@eslint/js": "^10.0.1",
+        "@types/node": "^25.6.0",
+        "@typescript/native-preview": "^7.0.0-dev.20260410.1",
+        "eslint": "^10.2.0",
+        "eslint-plugin-perfectionist": "^5.8.0",
+        "jiti": "^2.6.1",
+        "lefthook": "^2.1.5",
+        "prettier": "^3.8.2",
+        "typescript-eslint": "^8.46.1",
+        "vitest": "^4.1.4"
+    },
+    "dependencies": {}
+}

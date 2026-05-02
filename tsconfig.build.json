@@ -1,0 +1,25 @@
+{
+    "compilerOptions": {
+        "target": "esnext",
+        "module": "esnext",
+        "moduleResolution": "bundler",
+        "lib": ["esnext", "DOM", "DOM.Iterable", "DOM.AsyncIterable"],
+        "strict": true,
+        "skipLibCheck": true,
+        "noUncheckedIndexedAccess": true,
+        "noImplicitOverride": true,
+        "noImplicitAny": true,
+        "noPropertyAccessFromIndexSignature": true,
+        "exactOptionalPropertyTypes": false,
+        "noFallthroughCasesInSwitch": true,
+        "noImplicitReturns": true,
+        "noUnusedLocals": true,
+        "noUnusedParameters": true,
+        "declaration": true,
+        "emitDeclarationOnly": true,
+        "sourceMap": true,
+        "rootDir": "./src/",
+        "outDir": "./dist/"
+    },
+    "include": ["./src/"]
+}

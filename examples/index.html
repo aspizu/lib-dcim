@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>lib-dcim example</title>
+        <style>
+            body {
+                max-width: 760px;
+                margin: 32px auto;
+                padding: 0 16px;
+                color: #171717;
+                font-family: sans-serif;
+            }
+
+            button,
+            input {
+                font: inherit;
+            }
+
+            button {
+                margin-block: 12px;
+                padding: 8px 12px;
+            }
+
+            img {
+                display: block;
+                max-width: 100%;
+                margin-block: 12px;
+                border: 1px solid #ddd;
+            }
+
+            pre {
+                overflow: auto;
+                padding: 12px;
+                background: #f4f4f4;
+                font-size: 12px;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>lib-dcim example</h1>
+        <input id="file" type="file" accept="image/*" />
+        <button id="run" type="button">Resize to 480x360 WebP</button>
+        <p id="status">Choose an image.</p>
+        <img id="preview" alt="" />
+        <pre id="code"></pre>
+
+        <script type="module" src="./example.ts"></script>
+    </body>
+</html>
