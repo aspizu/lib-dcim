@@ -34,12 +34,21 @@ export function createWorker(code: string): WorkerProcessor {
     return new _WorkerProcessor(code)
 }
 
-class _WorkerProcessor implements WorkerProcessor {
+export class _WorkerProcessor implements WorkerProcessor {
     private readonly _objectURL: string
     private readonly _pending = new Map<number, _PendingJob>()
     private readonly _worker: Worker
     private _disposed = false
     private _nextId = 0
+    private _active = 0
+
+    get active(): number {
+        return this._active
+    }
+
+    get queued(): number {
+        return this._pending.size
+    }
 
     constructor(code: string) {
         const blob = new Blob([_workerSource(code)], {type: "application/javascript"})
@@ -74,6 +83,8 @@ class _WorkerProcessor implements WorkerProcessor {
         const id = this._nextId
         this._nextId += 1
 
+        this._active += 1
+
         return new Promise<Blob>((resolve, reject) => {
             this._pending.set(id, {reject, resolve})
             this._worker.postMessage({id, image})
@@ -88,9 +99,13 @@ class _WorkerProcessor implements WorkerProcessor {
         }
 
         this._pending.delete(message.id)
+        this._active -= 1
 
         if (message.type === "error") {
-            pending.reject(_workerError(message.value as _WorkerErrorData))
+            const data = message.value as _WorkerErrorData
+            const error = new Error(data.message)
+            error.stack = data.stack
+            pending.reject(error)
             return undefined
         }
 
@@ -99,6 +114,8 @@ class _WorkerProcessor implements WorkerProcessor {
     }
 
     private _rejectAll(error: Error): undefined {
+        this._active = 0
+
         for (const pending of this._pending.values()) {
             pending.reject(error)
         }
@@ -107,11 +124,4 @@ class _WorkerProcessor implements WorkerProcessor {
 
         return undefined
     }
-}
-
-function _workerError(value: _WorkerErrorData): Error {
-    const error = new Error(value.message)
-    error.stack = value.stack
-
-    return error
 }
