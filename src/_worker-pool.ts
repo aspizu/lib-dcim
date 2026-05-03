@@ -7,8 +7,6 @@ export interface WorkerPoolOptions {
     workers?: number
     /** Maximum number of jobs to queue per worker before routing to the next. Defaults to Infinity. */
     jobsPerWorker?: number
-    /** Maximum number of jobs a worker can process concurrently (waterfall depth). Defaults to Infinity. */
-    waterfall?: number
 }
 
 /** A pool of reusable DCIM worker processors. */
@@ -23,7 +21,7 @@ export interface WorkerPool {
 /**
  * Create a pool of Worker-backed processors for compiled DCIM JavaScript.
  *
- * Jobs are distributed round-robin, respecting `jobsPerWorker` and `waterfall` limits.
+ * Jobs are distributed round-robin, preferring idle workers and respecting `jobsPerWorker` limits.
  * Reuse one pool for batches of images, then call `dispose()` when it is no longer needed.
  *
  * @param code - Compiled DCIM JavaScript to run in workers.
@@ -39,13 +37,11 @@ export function createWorkerPool(
 class _WorkerPool implements WorkerPool {
     private readonly _processors: _WorkerProcessor[]
     private readonly _jobsPerWorker: number
-    private readonly _waterfall: number
     private _index = 0
 
     constructor(code: string, options: WorkerPoolOptions) {
         const count = options.workers ?? 1
         this._jobsPerWorker = options.jobsPerWorker ?? Infinity
-        this._waterfall = options.waterfall ?? Infinity
         this._processors = Array.from({length: count}, () => new _WorkerProcessor(code))
     }
 
@@ -65,7 +61,7 @@ class _WorkerPool implements WorkerPool {
             const idx = (start + i) % n
             const p = this._processors[idx]!
 
-            if (p.active < this._waterfall && p.queued < this._jobsPerWorker) {
+            if (p.queued === 0 || p.queued < this._jobsPerWorker) {
                 this._index = (idx + 1) % n
                 return p.run(image)
             }

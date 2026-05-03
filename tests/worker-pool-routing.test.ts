@@ -49,7 +49,6 @@ describe("worker pool routing", () => {
         try {
             const pool = createWorkerPool(dcim().png().compile(), {
                 workers: 2,
-                waterfall: 1,
             })
 
             const p1 = pool.run(new Blob())

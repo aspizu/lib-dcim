@@ -40,12 +40,6 @@ export class _WorkerProcessor implements WorkerProcessor {
     private readonly _worker: Worker
     private _disposed = false
     private _nextId = 0
-    private _active = 0
-
-    get active(): number {
-        return this._active
-    }
-
     get queued(): number {
         return this._pending.size
     }
@@ -83,8 +77,6 @@ export class _WorkerProcessor implements WorkerProcessor {
         const id = this._nextId
         this._nextId += 1
 
-        this._active += 1
-
         return new Promise<Blob>((resolve, reject) => {
             this._pending.set(id, {reject, resolve})
             this._worker.postMessage({id, image})
@@ -99,7 +91,6 @@ export class _WorkerProcessor implements WorkerProcessor {
         }
 
         this._pending.delete(message.id)
-        this._active -= 1
 
         if (message.type === "error") {
             const data = message.value as _WorkerErrorData
@@ -114,8 +105,6 @@ export class _WorkerProcessor implements WorkerProcessor {
     }
 
     private _rejectAll(error: Error): undefined {
-        this._active = 0
-
         for (const pending of this._pending.values()) {
             pending.reject(error)
         }
